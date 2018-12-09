@@ -13,5 +13,6 @@ public enum ParserState {
     INCREMENT_COUNTER,
     CREATE_COUNTER,
     TABLE,
-    HEADER_CELLS
+    HEADER_CELLS,
+    ATTRIBUTE
 }

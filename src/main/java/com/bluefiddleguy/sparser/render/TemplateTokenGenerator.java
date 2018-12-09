@@ -12,7 +12,11 @@ public class TemplateTokenGenerator {
         this.tokenList = tokens.collect(Collectors.toList());
     }
 
+    public TemplateTokenGenerator(List<Pair<ParserState,String>> tokens){
+        this.tokenList = tokens;
+    }
     public Stream<Pair<ParserState,String>> tokens(){
         return this.tokenList.stream();
     }
+
 }

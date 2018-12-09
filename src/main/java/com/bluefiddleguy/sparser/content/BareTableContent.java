@@ -15,7 +15,7 @@ public class BareTableContent implements  ContentItem{
     private Map<String,String> attributes = new HashMap<String,String>();
     public BareTableContent(ContentTable table){
         this.tag = MarkupTag.PLAIN;
-        this.content = "TABLE\n";
+        this.content = "\n\nTABLE TYPE\n";
         this.table = table;
     }
     @Override

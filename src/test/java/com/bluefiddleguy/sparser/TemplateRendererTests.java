@@ -4,13 +4,12 @@ import com.bluefiddleguy.sparser.content.BareTableContent;
 import com.bluefiddleguy.sparser.content.ContentTable;
 import com.bluefiddleguy.sparser.content.ContentTableFactory;
 import com.bluefiddleguy.sparser.content.MarkupTag;
-import com.bluefiddleguy.sparser.render.HTMLTemplateRenderer;
-import com.bluefiddleguy.sparser.render.ParserState;
-import com.bluefiddleguy.sparser.render.TemplateConfiguration;
-import com.bluefiddleguy.sparser.render.TemplateTokenGenerator;
+import com.bluefiddleguy.sparser.render.*;
 import javafx.util.Pair;
 import org.junit.Test;
 
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -24,14 +23,14 @@ public class TemplateRendererTests {
 
         @Override
         public TemplateTokenGenerator getContentTemplate(MarkupTag tag) {
-            return new TemplateTokenGenerator(Stream.of(new Pair<ParserState,String>(ParserState.TEXT,"MAIN TAG "+tag+","),
+            return new TemplateTokenGenerator(Stream.of(new Pair<ParserState,String>(ParserState.TEXT,"MAIN TAG >\n"),
                     new Pair<ParserState,String>(ParserState.TABLE,"default"),
             new Pair<ParserState,String>(ParserState.TEXT,"END "+tag+"\n")));
         }
 
         @Override
         public TemplateTokenGenerator getTableTemplate(MarkupTag tag) {
-            return new TemplateTokenGenerator(Stream.of(new Pair<ParserState,String>(ParserState.TEXT,"<<TABLE TAG "+tag+","),
+            return new TemplateTokenGenerator(Stream.of(new Pair<ParserState,String>(ParserState.TEXT,"\n<<TABLE TAG>\n"),
                     new Pair<ParserState,String>(ParserState.CAPTION,"default"),
             new Pair<ParserState,String>(ParserState.ROWS,"default"),
             new Pair<ParserState,String>(ParserState.TEXT,"END "+tag+">>\n")));
@@ -39,23 +38,23 @@ public class TemplateRendererTests {
 
         @Override
         public TemplateTokenGenerator getRowTemplate(MarkupTag tag) {
-            return new TemplateTokenGenerator(Stream.of(new Pair<ParserState,String>(ParserState.TEXT,"<<ROW TAG "+tag+","),
+            return new TemplateTokenGenerator(Stream.of(new Pair<ParserState,String>(ParserState.TEXT,"\n<<ROW TAG >\n"),
                     new Pair<ParserState,String>(ParserState.CELLS,"default"),
             new Pair<ParserState,String>(ParserState.TEXT,"END "+tag+"\n")));
         }
 
         @Override
         public TemplateTokenGenerator getHeaderCellTemplate(MarkupTag tag) {
-            return new TemplateTokenGenerator(Stream.of(new Pair<ParserState,String>(ParserState.TEXT,"<<TAG "+tag+","),
+            return new TemplateTokenGenerator(Stream.of(new Pair<ParserState,String>(ParserState.TEXT,"\n<<TAG >\n"),
                     new Pair<ParserState,String>(ParserState.CELL,"default"),
             new Pair<ParserState,String>(ParserState.TEXT,"END "+tag+">>")));
         }
 
         @Override
         public TemplateTokenGenerator getCellTemplate(MarkupTag tag) {
-            return new TemplateTokenGenerator(Stream.of(new Pair<ParserState,String>(ParserState.TEXT,"<<TAG "+tag),
+            return new TemplateTokenGenerator(Stream.of(new Pair<ParserState,String>(ParserState.TEXT,"\n<<TAG a=\""),
                     new Pair<ParserState,String>(ParserState.CELL,"default"),
-                    new Pair<ParserState,String>(ParserState.TEXT,"END "+tag+">>")));
+                    new Pair<ParserState,String>(ParserState.TEXT,"\" "+tag+">>\n")));
         }
     }
     @Test
@@ -72,7 +71,7 @@ public class TemplateRendererTests {
         List<String> row2 = Arrays.asList("a2 b2 c2 x2 y2 z2".split(" "));
         List<String> row3 = Arrays.asList("a3 b3".split(" "));
         List<List<String>> content = Stream.of(row1,row2,row3).collect(Collectors.toList());
-        ContentTable table = new ContentTableFactory().newTable("test",nheaderList,content);
+        ContentTable table = new ContentTableFactory().newTable("\nTABLE CAPTION\n",nheaderList,content);
         return table;
     }
     @Test
@@ -80,7 +79,7 @@ public class TemplateRendererTests {
         ContentTable table = this.sampleTable();
         assert(table.getNRows() == 3);
         assert(table.getNCols() == 6);
-        assert(table.getCaption()=="test");
+        assert(table.getCaption()=="\nTABLE CAPTION\n");
         assert(table.getHeader(2)=="Col C");
         assert(table.getCell(1,5).equals("z2"));
         assert(table.getHeader(10).equals(""));
@@ -113,9 +112,20 @@ public class TemplateRendererTests {
         BareTableContent table = new BareTableContent(this.sampleTable());
         StringWriter out = new StringWriter();
         HTMLTemplateRenderer outManager = new HTMLTemplateRenderer(out,tconfig);
-        outManager.writeStage(new Pair(ParserState.TABLE,""),table);
+        List<Pair<ParserState,String>> multiple = Stream.of(new Pair<ParserState,String>(ParserState.TEXT,"\n\n\nStart"),
+                new Pair<ParserState,String>(ParserState.TABLE,"Example")).collect(Collectors.toList());
+        TemplateTokenGenerator ttg = new TemplateTokenGenerator(multiple);
+        outManager.writeStages(ttg,table);
         System.out.println(out.toString());
 
+    }
 
+    @Test
+    public void testTemplateGeneration(){
+        InputStream testString = new ByteArrayInputStream("Header {{tag1}} and {{tag2}} and {{tag3}} ".getBytes());
+        TemplateTokenGenerator ttg = new SparserTokenGeneratorFactory().fromTemplateFile(testString);
+        ttg.tokens().forEach(
+                s->{System.out.println(s);}
+        );
     }
 }
