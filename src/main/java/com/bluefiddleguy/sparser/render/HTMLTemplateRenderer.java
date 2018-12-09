@@ -39,7 +39,6 @@ public class HTMLTemplateRenderer implements ContentRenderer {
         this.handler.put(ParserState.REFERENCE, new ReferenceHandler());
         CounterHandler counter = new CounterHandler();
         this.handler.put(ParserState.COUNTER, counter);
-        this.handler.put(ParserState.CREATE_COUNTER, counter);
         this.handler.put(ParserState.INCREMENT_COUNTER, counter);
 
 

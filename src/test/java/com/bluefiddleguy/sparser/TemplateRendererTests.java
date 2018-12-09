@@ -120,12 +120,34 @@ public class TemplateRendererTests {
 
     }
 
+    private TemplateTokenGenerator ttgFromString(String templateString){
+        return new SparserTokenGeneratorFactory().fromTemplateFile(
+                new ByteArrayInputStream(templateString.getBytes()));
+    }
     @Test
-    public void testTemplateGeneration(){
+    public void testTemplateGeneration() {
         InputStream testString = new ByteArrayInputStream("Header {{tag1}} and {{tag2}} and {{tag3}} ".getBytes());
         TemplateTokenGenerator ttg = new SparserTokenGeneratorFactory().fromTemplateFile(testString);
-        ttg.tokens().forEach(
-                s->{System.out.println(s);}
-        );
+        assert(ttg.tokens().collect(Collectors.toList()).size()==7);
+        TemplateTokenGenerator counterTag = this.ttgFromString("{{++monkey}}{{=monkey}}{{render.table}}");
+        List<Pair<ParserState,String>> counters = counterTag.tokens()
+                .collect(Collectors.toList());
+        assert(counters.get(0).getKey().equals(ParserState.INCREMENT_COUNTER));
+        assert(counters.get(0).getValue().equalsIgnoreCase("monkey"));
+        assert(counters.get(1).getKey().equals(ParserState.COUNTER));
+        assert(counters.get(2).getKey().equals(ParserState.TABLE));
+        TemplateTokenGenerator referenceTag = this.ttgFromString("<b>{{render.reference.one}}");
+        List<Pair<ParserState,String>> refs = referenceTag.tokens()
+                .collect(Collectors.toList());
+        assert(refs.get(0).getKey()==ParserState.TEXT);
+        assert(refs.get(0).getValue().equalsIgnoreCase("<b>"));
+        assert(refs.get(1).getKey().equals(ParserState.REFERENCE));
+        assert(refs.get(1).getValue().equalsIgnoreCase("one"));
+        
+
+
+
+
+
     }
 }

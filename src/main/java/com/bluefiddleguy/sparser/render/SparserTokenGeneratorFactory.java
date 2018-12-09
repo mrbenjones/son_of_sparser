@@ -4,17 +4,21 @@ import javafx.util.Pair;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class SparserTokenGeneratorFactory implements  TokenGeneratorFactory{
 
-    Pattern tagPattern = Pattern.compile("(.*?)\\{\\{(.*?)\\}\\}",Pattern.MULTILINE|Pattern.DOTALL);
-    Pattern counterPattern = Pattern.compile("(\\W)(\\w+)",Pattern.DOTALL|Pattern.MULTILINE);
-    Pattern renderPattern = Pattern.compile("render\\.(\\w+)\\.?(\\w*)",Pattern.DOTALL|Pattern.MULTILINE);
-    Pattern endText = Pattern.compile("[^\\}]*?$",Pattern.DOTALL|Pattern.MULTILINE);
+
+    private Map<String,ParserState> stageForString;
+    private Pattern tagPattern = Pattern.compile("(.*?)\\{\\{(.*?)\\}\\}",Pattern.MULTILINE|Pattern.DOTALL);
+    private Pattern counterPattern = Pattern.compile("([\\+\\=]+)(\\w+)",Pattern.DOTALL|Pattern.MULTILINE);
+    private Pattern renderPattern = Pattern.compile("render\\.(\\w+)\\.{0,1}(.*)",Pattern.DOTALL|Pattern.MULTILINE);
+    private Pattern endText = Pattern.compile("[^\\}]*?$",Pattern.DOTALL|Pattern.MULTILINE);
     /**
      * Buidling a render pair object (not just an attribute reference.
      * @param tagInit
@@ -23,8 +27,17 @@ public class SparserTokenGeneratorFactory implements  TokenGeneratorFactory{
      * @return
      */
     private Pair<ParserState,String>  buildPair(String tagInit,String spec,String content){
-        ParserState tagState = ParserState.TEXT;
-        return new Pair<ParserState,String>(tagState,tagInit+"::"+content);
+        ParserState stage = ParserState.TEXT;
+        if (tagInit.equals("++")){
+            stage = ParserState.INCREMENT_COUNTER;
+        }
+        else if (tagInit.equals("=")){
+            stage = ParserState.COUNTER;
+        }
+        else{
+            stage = ParserState.get(spec);
+        }
+        return new Pair<ParserState,String>(stage,content);
     };
 
     /**
@@ -51,7 +64,6 @@ public class SparserTokenGeneratorFactory implements  TokenGeneratorFactory{
         Matcher tags = this.tagPattern.matcher(templateText);
         int matchEnd = 0;
         while (tags.find()){
-            System.out.println(tags.group(0));
             String preMatch = tags.group(1);
             String tagContent = tags.group(2);
             if (preMatch.length()>0){
@@ -61,10 +73,15 @@ public class SparserTokenGeneratorFactory implements  TokenGeneratorFactory{
             Matcher render = this.renderPattern.matcher(tagContent);
             Matcher counter = this.counterPattern.matcher(tagContent);
             if (render.matches()){
-                stageStream.add(this.buildPair(render.group(1),render.group(2),render.group(3)));
+                // safety for optional element of reference name.
+                String reference = "";
+                if (render.groupCount()>1){
+                    reference = render.group(2);
+                }
+                stageStream.add(this.buildPair("render",render.group(1),reference));
             }
             else if (counter.matches()){
-                stageStream.add(this.buildPair(render.group(1),render.group(2),""));
+                stageStream.add(this.buildPair(counter.group(1),"",counter.group(2)));
             }
             else{
                 stageStream.add(this.attributePair(tagContent));
@@ -79,7 +96,6 @@ public class SparserTokenGeneratorFactory implements  TokenGeneratorFactory{
         );
     }
     catch (Exception e){
-        System.out.println(templateText);
     }
         return stageStream;
 
