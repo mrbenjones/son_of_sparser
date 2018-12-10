@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public enum ParserState {
+    MAIN("main"),
     TEXT("text"),
     TAG("tag"),
     CHILDREN("children"),

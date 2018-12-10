@@ -144,10 +144,17 @@ public class TemplateRendererTests {
         assert(refs.get(1).getKey().equals(ParserState.REFERENCE));
         assert(refs.get(1).getValue().equalsIgnoreCase("one"));
 
+    }
 
-
-
-
-
+    @Test
+    public void testTemplateConfig(){
+        InputStream jsonStream = this.getClass().getResourceAsStream("/templates/config/sample_config.json");
+        TemplateConfiguration setup = new SparserConfigurationFactory().fromJson(jsonStream);
+        TemplateTokenGenerator mainDoc = setup.getContentTemplate(MarkupTag.PLAIN);
+        System.out.println(
+                mainDoc.tokens().filter(
+                    s -> s.getKey().equals(ParserState.TABLE)
+                ).findFirst().get().toString()
+        );
     }
 }

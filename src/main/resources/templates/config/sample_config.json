@@ -1,5 +1,10 @@
 {
   "plain" : {
-    "table" : "/template/"
+    "main" : "/templates/test/document.html",
+    "table" : "/templates/test/tables.html",
+    "row" : "/templates/test/row.html",
+    "cells" : "/templates/test/cell.html",
+    "header_cells" : "/templates/test/header.html"
+
   }
 }
