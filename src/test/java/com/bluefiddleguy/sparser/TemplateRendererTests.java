@@ -143,7 +143,7 @@ public class TemplateRendererTests {
         assert(refs.get(0).getValue().equalsIgnoreCase("<b>"));
         assert(refs.get(1).getKey().equals(ParserState.REFERENCE));
         assert(refs.get(1).getValue().equalsIgnoreCase("one"));
-        
+
 
 
 
